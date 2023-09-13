@@ -1,7 +1,6 @@
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 
 public class Main {
     final static int ROUTE_COUNT = 1000; // Кол-во генерируемых маршрутов
@@ -13,7 +12,7 @@ public class Main {
 
     static int doneThreads = 0; // Кол-во завершённых потоков (для отслеживания конца процесса анализа)
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
 
 
         // Процесс генерации, подсчёта букв "R" и вывод результата для одного маршрута
