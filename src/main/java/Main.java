@@ -10,10 +10,12 @@ public class Main {
     // В ключах попавшиеся частоты буквы 'R', а в значениях — количество раз их появления.
     public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
+    static int maxFreqKey = 0; // Самое частое кол-во повторений буквы "R" в маршруте
+    static int maxFreqValue = 0; // Максимальное кол-во повторений частоты повторений букры "R" в маршруте
+
     static int doneThreads = 0; // Кол-во завершённых потоков (для отслеживания конца процесса анализа)
 
     public static void main(String[] args) {
-
 
         // Процесс генерации, подсчёта букв "R" и вывод результата для одного маршрута
         Runnable analyzeRoute = () -> {
@@ -33,11 +35,40 @@ public class Main {
                     // Иначе - добавляем со значением 1
                     sizeToFreq.put(rCount, 1);
                 }
+                sizeToFreq.notify();
             }
 
             // Инкрементим число завершённых потоков
             doneThreads++;
         };
+
+        // Определение текущего максимума в мапе
+        Runnable printCurrentMaxSize = () -> {
+            while (!Thread.interrupted()) {
+                synchronized (sizeToFreq) {
+
+                    try {
+                        sizeToFreq.wait(); // Ожидаем освобождения мапы
+                    } catch (InterruptedException e) {
+                        return; // Завершаем поток
+                    }
+
+                    // Находим самое частое кол-во повторений
+                    for (Map.Entry<Integer, Integer> freq : sizeToFreq.entrySet()) {
+                        if (freq.getValue() > maxFreqValue) {
+                            maxFreqValue = freq.getValue();
+                            maxFreqKey = freq.getKey();
+                        }
+                    }
+                }
+
+                System.out.printf("Текущее самое частое количество повторений: %s (встретилось %s раз)\n", maxFreqKey, maxFreqValue);
+            }
+        };
+
+        // Стартуем поток для мониторинга текущего состояния мапы
+        Thread monitorThread = new Thread(printCurrentMaxSize);
+        monitorThread.start();
 
         // Стартуем потоки для анализа
         for (int i = 0; i < ROUTE_COUNT; i++) {
@@ -54,17 +85,10 @@ public class Main {
             }
         }
 
-        int maxFreqKey = 0; // Самое частое кол-во повторений буквы "R" в маршруте
-        int maxFreqValue = 0; // Максимальное кол-во повторений частоты повторений букры "R" в маршруте
+        // Завершаем поток мониторинга мапы
+        monitorThread.interrupt();
 
-        // Находим самое частое кол-во повторений
-        for (Map.Entry<Integer, Integer> freq : sizeToFreq.entrySet()) {
-            if  (freq.getValue() > maxFreqValue) {
-                maxFreqValue = freq.getValue();
-                maxFreqKey = freq.getKey();
-            }
-        }
-
+        // Выводим итоговый максимум
         System.out.printf("\nСамое частое количество повторений %s (встретилось %s раз)\n", maxFreqKey, maxFreqValue);
 
         // Выводим остальные результаты
